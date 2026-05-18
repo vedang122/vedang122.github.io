@@ -1,0 +1,86 @@
+---
+import Base from "~/layouts/Base.astro";
+import PostRow from "~/components/PostRow.astro";
+import { getCollection } from "astro:content";
+import readingTime from "reading-time";
+
+const all = (await getCollection("posts", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const recent = all.slice(0, 5);
+const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
+---
+
+<Base
+  title="Vedang Karwa — Notes on building with LLMs, startups & shipping software"
+  description="Essays and field notes from a founding engineer working at the intersection of LLMs, developer tooling, and 0→1 startup engineering."
+  nav="index"
+  screenLabel="01 Home"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Vedang Karwa",
+    url: "https://vedangkarwa.com",
+    sameAs: [
+      "https://x.com/vedang122",
+      "https://github.com/vedang122",
+      "https://www.linkedin.com/in/vedang-karwa-012645165/",
+    ],
+    jobTitle: "Founding Engineer",
+    worksFor: { "@type": "Organization", name: "Simbian.ai" },
+  }}
+>
+  <main class="wrap">
+
+    <!-- HERO -->
+    <section class="hero">
+      <h1>
+        Notes from inside<br />
+        the <em>0&thinsp;→&thinsp;1</em><span class="slash">.</span><br />
+        LLMs, startups,<br />
+        and the messy<br />
+        middle.
+      </h1>
+      <p class="hero-sub">
+        I'm Vedang. I write about
+        LLMs, Startups, Tech Leadership, the parts that
+        compound, the parts that break, and the small skills that 10× the day.
+      </p>
+      <div class="hero-foot">
+        <a class="btn primary" href="/archive">
+          Read the archive <span class="arr">→</span>
+        </a>
+        <a class="btn" href="/about">
+          About Vedang <span class="arr">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- RECENT -->
+    <section class="section" id="recent">
+      <header class="sec-head">
+        <span class="sec-num">/ 01</span>
+        <h2 class="sec-title">Recent essays</h2>
+        <span class="sec-aside"><a href="/archive">All {all.length} posts →</a></span>
+      </header>
+
+      <ol class="post-list">
+        {recent.map((p, i) => {
+          const rt = readingTime(p.body).text;
+          return (
+            <PostRow
+              num={`/${String(i + 1).padStart(2, "0")}`}
+              href={`/posts/${p.slug}`}
+              title={p.data.title}
+              dek={p.data.description}
+              date={dateFmt.format(p.data.pubDate)}
+              readingTime={rt}
+              tag={p.data.tag}
+            />
+          );
+        })}
+      </ol>
+    </section>
+
+  </main>
+</Base>

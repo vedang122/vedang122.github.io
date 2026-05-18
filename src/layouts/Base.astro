@@ -1,0 +1,95 @@
+---
+// Base layout — shared <head>, top bar, footer, tweaks panel.
+// Zero client-side JS by default; tweaks panel is a single tiny vanilla
+// script loaded from /public.
+import "~/styles/global.css";
+import TopBar from "~/components/TopBar.astro";
+import Footer from "~/components/Footer.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  screenLabel?: string;
+  /** JSON-LD object — serialized into a <script type="application/ld+json"> */
+  jsonLd?: Record<string, unknown>;
+  /** Highlights the active nav link */
+  nav?: "index" | "archive" | "about" | "none";
+}
+
+const {
+  title,
+  description = "Notes from inside the 0→1. Essays on LLMs, leverage, and shipping software at a startup.",
+  canonical,
+  screenLabel,
+  jsonLd,
+  nav = "none",
+} = Astro.props;
+
+const url = canonical ?? new URL(Astro.url.pathname, Astro.site).toString();
+---
+
+<!doctype html>
+<html
+  lang="en"
+  data-accent="violet"
+  data-density="comfortable"
+  data-theme="light"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={url} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Vedang Karwa — Essays"
+      href="/rss.xml"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={url} />
+    <meta property="og:site_name" content="Vedang Karwa" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@vedang122" />
+
+    <!-- Apply persisted tweaks BEFORE first paint (no FOUC for dark mode) -->
+    <script is:inline>
+      (function () {
+        try {
+          var s = JSON.parse(localStorage.getItem("vedang_tweaks_v1") || "{}");
+          var r = document.documentElement;
+          if (s.accent) r.setAttribute("data-accent", s.accent);
+          if (s.density) r.setAttribute("data-density", s.density);
+          if (s.theme) r.setAttribute("data-theme", s.theme);
+        } catch (e) {}
+      })();
+    </script>
+
+    {jsonLd && (
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify(jsonLd)}
+      />
+    )}
+  </head>
+
+  <body data-screen-label={screenLabel}>
+    <TopBar active={nav} />
+
+    <slot />
+
+    <Footer />
+
+    <!-- Tweaks panel — interactive island, loaded once -->
+    <script src="/tweaks.js" defer></script>
+  </body>
+</html>

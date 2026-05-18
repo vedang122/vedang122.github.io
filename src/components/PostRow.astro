@@ -1,0 +1,25 @@
+---
+// A single row in the post list / archive.
+interface Props {
+  num: string;       // "/01"
+  href: string;
+  title: string;
+  dek: string;
+  date: string;      // "14 May"
+  readingTime: string; // "9 min"
+  tag?: string;
+}
+const { num, href, title, dek, date, readingTime, tag } = Astro.props;
+---
+
+<li>
+  <a class="post-row" href={href}>
+    <span class="num">{num}</span>
+    <span class="title">{title}</span>
+    <span class="dek">{dek}</span>
+    <span class="meta">
+      {date} · {readingTime}
+      {tag && <span class="tag">{tag}</span>}
+    </span>
+  </a>
+</li>

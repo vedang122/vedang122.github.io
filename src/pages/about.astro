@@ -1,0 +1,81 @@
+---
+import Base from "~/layouts/Base.astro";
+---
+
+<Base
+  title="About — Vedang Karwa"
+  description="Vedang Karwa is a founding engineer at Simbian.ai. He writes about LLMs, developer tooling, and 0→1 startup engineering."
+  nav="about"
+  screenLabel="03 About"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    mainEntity: {
+      "@type": "Person",
+      name: "Vedang Karwa",
+      jobTitle: "Founding Engineer",
+      worksFor: { "@type": "Organization", name: "Simbian.ai" },
+      url: "https://vedangkarwa.com",
+    },
+  }}
+>
+  <main class="wrap">
+
+    <section class="about-hero">
+      <div class="hero-eyebrow">
+        <span><i class="tick"></i>About</span>
+        <span>// last updated 09 May 2026</span>
+      </div>
+      <h1>
+        Builder of <span class="accent">tools</span>,<br />
+        writer of essays.
+      </h1>
+    </section>
+
+    <section class="about-grid">
+
+      <aside class="about-side">
+        <img class="avatar" src="/portrait.jpg" alt="Vedang Karwa" width="480" height="480" />
+
+        <dl class="kv" style="border-top:none;padding-top:0">
+          <dt>Now</dt><dd>Founding Eng · <a href="https://www.simbian.ai/">Simbian.ai</a></dd>
+          <dt>Before</dt><dd>AWS, D. E. Shaw</dd>
+          <dt>Education</dt><dd> IIT Delhi </dd>
+          <dt>Email</dt><dd><a href="mailto:vedang@vedang.com">vedang@vedang.com</a></dd>
+          <dt>X</dt><dd><a href="https://x.com/vedang122">@vedang122</a></dd>
+          <dt>GitHub</dt><dd><a href="https://github.com/vedang122">vedang122</a></dd>
+          <dt>LinkedIn</dt><dd><a href="https://www.linkedin.com/in/vedang-karwa-012645165/">linkedin/in/vedang</a></dd>
+        </dl>
+      </aside>
+
+      <article class="about-prose">
+        <p>
+          I'm Vedang. I have been building AI Software products for more than 2 years now. I joined when
+          the repo was a single commit. I helped take the product from Zero to One. These days, most of my time is spent at the intersection of LLMs, leadership, technology and fitness. This site is the long-form half of how I think.
+        </p>
+
+        <blockquote>
+          "Write the post you wish you'd found at 1am two years ago."
+          <cite>— a rule I keep returning to</cite>
+        </blockquote>
+
+        <h2>What I write about</h2>
+        <p>Mostly four threads, all braided:</p>
+        <ul style="font-size:19px;line-height:1.6;color:var(--fg-soft);padding-left:22px;">
+          <li><b>LLMs in production</b> — agents that don't lie, evals, make them work at scale</li>
+          <li><b>0→1 engineering</b> — good old software systems, what not to build, founding engineer role in startups</li>
+          <li><b>Startups </b> — How to build an AI native startup, my "taste" on it. </li>
+          <li><b>Fitness</b> — occasionally. Being fit taught me how to live a balanced life.</li>
+        </ul>
+
+        <h2>Colophon</h2>
+        <p>
+          Built with <a href="https://astro.build">Astro</a>, content in
+          Markdown via Content Collections, styled with Tailwind, using Claude Code.
+        </p>
+      </article>
+
+    </section>
+
+  </main>
+</Base>

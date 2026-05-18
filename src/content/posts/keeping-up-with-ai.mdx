@@ -1,0 +1,80 @@
+---
+title: "How to keep up with AI updates without losing your week"
+description: "A weekly filter for the firehose. The signal sources I actually read, the ones I dropped, and how I batch the rest."
+pubDate: 2026-05-06
+tag: "Workflow"
+---
+
+<p class="lead">
+  Keeping up with AI in 2026 is a part-time job, and most engineers are
+  doing it badly — myself included, for a year. Here's the system I
+  landed on that takes ~90 minutes a week and beats every "must-read"
+  newsletter I've tried.
+</p>
+
+## /01 The problem isn't volume, it's recency-bias {#problem}
+
+The firehose feels new every day, but 80% of what crosses my feed in any
+given week is either (a) a benchmark that won't generalize, (b) a thread
+about a paper I'll never implement, or (c) a model release I won't have
+time to evaluate for at least a month. Recency-bias eats the day.
+
+The fix is to read on a delay.
+
+## /02 The 90-minute weekly batch {#batch}
+
+Every Sunday I spend 90 minutes on a single tab and nothing else. Three
+blocks, in this order:
+
+1. **Releases (15 min)** — what shipped this week, from the model labs and from the tools we use.
+2. **Signal sources (45 min)** — a fixed list of ~9 people whose RSS I trust.
+3. **Working notes (30 min)** — turn the above into a one-page diff against last week's notes.
+
+Nothing else gets read during the week. If something is genuinely
+urgent, it'll cross my path three times by Sunday. That's the filter.
+
+## /03 What's on the signal list {#list}
+
+I rotate this list quarterly. Current cut:
+
+- The model lab changelogs (Anthropic, OpenAI, Google AI, Mistral).
+- Two researchers per major capability area I care about.
+- One contrarian who I disagree with productively.
+- Hacker News only via [hckrnews.com](https://hckrnews.com) (top 10/day).
+- The Simbian internal "ai-news" channel, batched.
+
+I dropped Twitter as a primary source in 2025. It's still good for
+real-time vibes; it's terrible for compounding understanding.
+
+## /04 The one-page weekly diff {#diff}
+
+The output of the batch is a single markdown file. Six headings, never
+more. Stays under one page. The discipline of fitting it on one page
+forces ranking.
+
+```markdown
+# Week of 04 May 2026
+
+## New capabilities worth trying
+## Things that broke (us or others)
+## Papers I'd implement if I had time
+## What I changed my mind about
+## What I'm watching next week
+## (one) link worth your time
+```
+
+This file ships to the team Slack on Monday at 9am.
+
+## /05 Why this works {#why}
+
+Three reasons, in order of importance:
+
+- **Decision-relevance over novelty.** The batch is filtered through
+  "would this change what I build this week?" Most things don't.
+- **Asynchronous from launches.** I read at my pace, not the labs'.
+- **Compounds across weeks.** The diff is a diff — week N references
+  week N-1. After three months it's the most useful doc in my notes.
+
+If you take one thing: read on a delay. The half-life of an AI take is
+about four days. Most of them are wrong, and you'll know which by
+Sunday.

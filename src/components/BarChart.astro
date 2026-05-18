@@ -1,0 +1,71 @@
+---
+// Inline SVG bar-chart component used in the code-review post.
+// Two paired series across N months. Pure SVG, zero JS.
+interface Series {
+  label: string;
+  values: number[];   // 0..100
+  color: "rule" | "accent";
+}
+interface Props {
+  months: string[];
+  series: [Series, Series];
+  caption?: string;
+  note?: string;
+}
+const { months, series, caption = "", note = "" } = Astro.props;
+
+const w = 720, h = 320, pad = 60, baseY = 260;
+const slot = (w - pad - 20) / months.length;
+const barW = 22;
+
+const yToY = (v: number) => baseY - (v / 100) * (baseY - 40);
+---
+
+<figure>
+  <svg viewBox={`0 0 ${w} ${h}`} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={caption}>
+    <style>{`
+      .ax{stroke:var(--rule);stroke-width:1}
+      .grid{stroke:var(--rule-soft);stroke-width:1;stroke-dasharray:2 4}
+      .lbl{font-family:ui-monospace,Menlo,monospace;font-size:11px;fill:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+      .bn{font-family:Helvetica,Arial,sans-serif;font-size:11px;fill:var(--muted)}
+      .bc1{fill:var(--rule-soft)}
+      .bc2{fill:var(--accent)}
+    `}</style>
+    {[40, 100, 160, 220].map(y => (
+      <line class="grid" x1={pad} y1={y} x2={w - 20} y2={y} />
+    ))}
+    <line class="ax" x1={pad} y1={baseY} x2={w - 20} y2={baseY} />
+    <text class="lbl" x={20} y={44}>100</text>
+    <text class="lbl" x={28} y={104}>75</text>
+    <text class="lbl" x={28} y={164}>50</text>
+    <text class="lbl" x={28} y={224}>25</text>
+    <text class="lbl" x={36} y={276}>0</text>
+
+    {months.map((m, i) => {
+      const x = pad + 20 + i * slot;
+      const v1 = series[0].values[i] ?? 0;
+      const v2 = series[1].values[i] ?? 0;
+      const y1 = yToY(v1), y2 = yToY(v2);
+      return (
+        <g>
+          <rect class="bc1" x={x}        y={y1} width={barW} height={baseY - y1} />
+          <rect class="bc2" x={x + barW} y={y2} width={barW} height={baseY - y2} />
+          <text class="bn" x={x + barW} y={280} text-anchor="middle">{m}</text>
+        </g>
+      );
+    })}
+
+    <g transform={`translate(${pad},300)`}>
+      <rect class="bc1" x="0" y="0" width="10" height="10" />
+      <text class="lbl" x="16" y="9">{series[0].label}</text>
+      <rect class="bc2" x="240" y="0" width="10" height="10" />
+      <text class="lbl" x="256" y="9">{series[1].label}</text>
+    </g>
+  </svg>
+  {(caption || note) && (
+    <figcaption class="fig-cap">
+      <span>{caption}</span>
+      <span>{note}</span>
+    </figcaption>
+  )}
+</figure>

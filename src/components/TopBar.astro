@@ -1,0 +1,20 @@
+---
+interface Props {
+  active?: "index" | "archive" | "about" | "none";
+}
+const { active = "none" } = Astro.props;
+---
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="/"><span>Vedang</span><span class="dot"></span></a>
+    <nav class="nav" aria-label="Primary">
+      <a href="/" aria-current={active === "index" ? "page" : undefined}>Index</a>
+      <a href="/archive" aria-current={active === "archive" ? "page" : undefined}>Archive</a>
+      <a href="/about" aria-current={active === "about" ? "page" : undefined}>About</a>
+    </nav>
+    <div class="top-meta">
+      <span class="live">Building</span>
+    </div>
+  </div>
+</header>

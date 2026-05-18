@@ -1,0 +1,96 @@
+---
+import Base from "~/layouts/Base.astro";
+import PostRow from "~/components/PostRow.astro";
+import { getCollection } from "astro:content";
+import readingTime from "reading-time";
+
+const all = (await getCollection("posts", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+// Group by year
+const byYear = new Map<number, typeof all>();
+for (const p of all) {
+  const y = p.data.pubDate.getFullYear();
+  if (!byYear.has(y)) byYear.set(y, [] as any);
+  byYear.get(y)!.push(p);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+
+// Tag counts for filter chips
+const tagCounts = new Map<string, number>();
+for (const p of all) tagCounts.set(p.data.tag, (tagCounts.get(p.data.tag) ?? 0) + 1);
+const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
+
+const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
+let n = 0;
+---
+
+<Base
+  title="Archive — Vedang Karwa"
+  description="The full archive of essays by Vedang Karwa on LLMs, developer tooling, and 0→1 startup engineering."
+  nav="archive"
+  screenLabel="02 Archive"
+>
+  <main class="wrap">
+
+    <section class="arc-head">
+      <span class="hero-eyebrow"><span><i class="tick"></i>The archive · since 2026</span></span>
+      <h1>Every<br />post. Ever.</h1>
+
+      <div class="arc-filters" role="tablist" aria-label="Filter by topic">
+        <button class="chip active" data-tag="all">
+          All <span class="count">{all.length}</span>
+        </button>
+        {tags.map(([t, c]) => (
+          <button class="chip" data-tag={t}>
+            {t} <span class="count">{c}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+
+    {years.map(year => {
+      const posts = byYear.get(year)!;
+      return (
+        <section class="arc-year">
+          <div class="y"><b>{year}</b>{String(posts.length).padStart(2, "0")} posts</div>
+          <ol class="arc-list post-list">
+            {posts.map(p => {
+              n += 1;
+              return (
+                <PostRow
+                  num={`/${String(n).padStart(2, "0")}`}
+                  href={`/posts/${p.slug}`}
+                  title={p.data.title}
+                  dek={p.data.description}
+                  date={dateFmt.format(p.data.pubDate)}
+                  readingTime={readingTime(p.body).text}
+                  tag={p.data.tag}
+                />
+              );
+            })}
+          </ol>
+        </section>
+      );
+    })}
+
+  </main>
+</Base>
+
+<script>
+  // Filter chips — pure DOM, no framework.
+  const chips = document.querySelectorAll<HTMLButtonElement>(".chip");
+  const rows = document.querySelectorAll<HTMLLIElement>(".arc-list li");
+
+  chips.forEach(c =>
+    c.addEventListener("click", () => {
+      chips.forEach(x => x.classList.remove("active"));
+      c.classList.add("active");
+      const tag = c.dataset.tag!;
+      rows.forEach(li => {
+        const t = li.querySelector(".tag")?.textContent?.trim();
+        li.style.display = tag === "all" || t === tag ? "" : "none";
+      });
+    }),
+  );
+</script>

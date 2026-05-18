@@ -1,0 +1,142 @@
+---
+title: "How to make the Code Review skill work for you"
+description: "A practical playbook for turning AI code review from noise into something which can free your time"
+pubDate: 2026-05-14
+tag: "Practice"
+---
+
+import BarChart from "~/components/BarChart.astro";
+
+<p class="lead">
+  I've been running AI code review on every PR at Simbian for about
+  nine months. The first three were frustrating. The last six have been
+  genuinely load-bearing. The difference wasn't a better model — it was
+  a small set of rules I wish someone had handed me on day one.
+</p>
+
+This is that handout. Five things only. No tools list.
+
+## /01 Why most teams give up {#why}
+
+Out of the box, AI code review behaves like a hyper-confident junior
+who read every style guide and no business context. It flags `any` in
+TypeScript, suggests renaming variables that nobody renames, and asks
+for tests on a function that's been stable for three years. It is, at
+best, <mark>busy work disguised as rigor</mark>. Most teams quietly
+turn it off after a sprint.
+
+The fix isn't a better model. It's deciding — explicitly — what you
+want the reviewer to do, and what you want it to leave alone.
+
+## /02 Start with a contract, not a tool {#contract}
+
+Before you wire up anything, write a one-page **review contract**.
+Ours has three sections: _must flag_, _may comment_, _must not touch_.
+The contract lives in the repo. Every prompt, every config, every
+escalation rule descends from it.
+
+> A reviewer without a contract is just a critic with a runtime.
+> <cite>— internal Simbian wiki</cite>
+
+Ours, abbreviated:
+
+```markdown
+# Code review contract — v3
+
+## Must flag (block merge)
+- secrets, tokens, or unredacted PII in diff
+- missing input validation on user-facing endpoints
+- breaking changes to public types without migration note
+- new dependency > 50KB without justification
+
+## May comment (non-blocking)
+- duplication across files in this PR
+- missing tests on net-new public functions
+- error paths that swallow exceptions silently
+
+## Must NOT touch
+- stylistic preferences (formatting handled by formatter)
+- variable names in unchanged code
+- TODO comments left intentionally
+- generated files
+```
+
+The contract is the leverage point. The model only does what the
+contract permits. The contract is reviewed quarterly by the team — the
+same way you'd review a style guide.
+
+## /03 The base prompt is short {#prompt}
+
+We tried elaborate XML-tagged prompts with role-play and chain-of-thought.
+They scored worse than this:
+
+```text
+You are reviewing a pull request.
+Read the diff, the changed files, and the contract.
+
+For every comment, output exactly:
+  { severity, file, line, why, suggest }
+
+Rules
+1. severity must be one of: block, comment, nit
+2. Cite the contract clause that justifies the comment.
+3. If nothing in the contract justifies it, do not comment.
+4. Max 8 comments. Pick the most important.
+```
+
+Two design choices matter here. First, **structured output** — a
+comment without a contract clause is dropped before it ever reaches
+the PR. Second, **the cap**. Eight comments, ranked. Force the model
+to make choices. The signal-to-noise ratio on the PR thread is the
+only thing reviewers actually feel.
+
+## /04 The three-pass loop {#three}
+
+We don't run one review. We run three small ones, in sequence, each
+with a tighter scope.
+
+1. **Pass 1 — Diff only.** Flag obvious contract violations. Cheap model. ~3s.
+2. **Pass 2 — Diff + changed files.** Catch broken assumptions and cross-file regressions. Mid model. ~12s.
+3. **Pass 3 — Surgical.** Only if pass 2 flagged something blocking. Frontier model. Full repo context.
+
+90% of PRs never reach pass 3. The pass-3 reviews are the ones the team
+genuinely respects, because by the time they fire, the model has
+already filtered for actual risk.
+
+## /05 Does it actually help? {#data}
+
+Here's nine months of data from our internal dashboard, normalized per
+merged PR.
+
+<BarChart
+  months={["Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May"]}
+  series={[
+    { label: "Comments per PR (noise)", color: "rule",   values: [100, 93, 78, 62, 49, 40, 33, 29, 24] },
+    { label: "Bugs caught (signal)",    color: "accent", values: [11, 14, 22, 29, 36, 42, 49, 56, 62] }
+  ]}
+  caption="FIG. 01 — Noise vs. signal, Sep 2025 → May 2026"
+  note="n = 1,247 PRs"
+/>
+
+The crossover in February is when we shipped the contract-clause
+gate. Comments per PR fell **73%**. Bugs caught more than doubled.
+Same model. Different rules of engagement.
+
+## /06 What to ignore {#ignore}
+
+Three habits to actively kill:
+
+- **Quality scores.** "This PR scores 7.2/10." Meaningless. Delete from the UI.
+- **Auto-applied fixes on style.** Your formatter already does this. Stop relitigating.
+- **Comments without code citations.** If the model can't point at a line, it doesn't get to talk.
+
+## /07 Closing thought {#close}
+
+AI code review is mostly a _policy_ problem dressed up as a _tools_
+problem. The teams that get value treat the reviewer like a junior on
+the team — onboarded, scoped, held accountable. The teams that don't,
+treat it like magic that should know what they want.
+
+If you've been burned, try this: throw away your tool config, write
+the contract, ship the three-pass loop, and only then re-enable
+anything fancy. Most of the value is in the first hour.
