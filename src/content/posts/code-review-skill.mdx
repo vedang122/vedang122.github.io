@@ -16,7 +16,7 @@ import BarChart from "~/components/BarChart.astro";
 
 This is that handout. Five things only. No tools list.
 
-## /01 Why most teams give up {#why}
+## /01 Why most teams give up
 
 Out of the box, AI code review behaves like a hyper-confident junior
 who read every style guide and no business context. It flags `any` in
@@ -28,7 +28,7 @@ turn it off after a sprint.
 The fix isn't a better model. It's deciding — explicitly — what you
 want the reviewer to do, and what you want it to leave alone.
 
-## /02 Start with a contract, not a tool {#contract}
+## /02 Start with a contract, not a tool
 
 Before you wire up anything, write a one-page **review contract**.
 Ours has three sections: _must flag_, _may comment_, _must not touch_.
@@ -65,7 +65,7 @@ The contract is the leverage point. The model only does what the
 contract permits. The contract is reviewed quarterly by the team — the
 same way you'd review a style guide.
 
-## /03 The base prompt is short {#prompt}
+## /03 The base prompt is short
 
 We tried elaborate XML-tagged prompts with role-play and chain-of-thought.
 They scored worse than this:
@@ -90,7 +90,7 @@ the PR. Second, **the cap**. Eight comments, ranked. Force the model
 to make choices. The signal-to-noise ratio on the PR thread is the
 only thing reviewers actually feel.
 
-## /04 The three-pass loop {#three}
+## /04 The three-pass loop
 
 We don't run one review. We run three small ones, in sequence, each
 with a tighter scope.
@@ -103,7 +103,7 @@ with a tighter scope.
 genuinely respects, because by the time they fire, the model has
 already filtered for actual risk.
 
-## /05 Does it actually help? {#data}
+## /05 Does it actually help?
 
 Here's nine months of data from our internal dashboard, normalized per
 merged PR.
@@ -122,7 +122,7 @@ The crossover in February is when we shipped the contract-clause
 gate. Comments per PR fell **73%**. Bugs caught more than doubled.
 Same model. Different rules of engagement.
 
-## /06 What to ignore {#ignore}
+## /06 What to ignore
 
 Three habits to actively kill:
 
@@ -130,7 +130,7 @@ Three habits to actively kill:
 - **Auto-applied fixes on style.** Your formatter already does this. Stop relitigating.
 - **Comments without code citations.** If the model can't point at a line, it doesn't get to talk.
 
-## /07 Closing thought {#close}
+## /07 Closing thought
 
 AI code review is mostly a _policy_ problem dressed up as a _tools_
 problem. The teams that get value treat the reviewer like a junior on

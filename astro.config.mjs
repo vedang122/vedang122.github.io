@@ -14,7 +14,6 @@ export default defineConfig({
   ],
   markdown: {
     shikiConfig: {
-      // Two themes ship with the design system's light + dark accents
       themes: { light: "github-light", dark: "github-dark" },
       wrap: false,
     },
