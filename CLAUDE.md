@@ -174,8 +174,15 @@ by Zod in `astro/src/content/config.ts`:
    that's intentional.
 3. **`draft: true` hides the post** from the index, archive, and RSS.
 4. **Headings use the `## /NN Title` convention.** The TOC auto-strips
-   the `/NN` prefix. If you need a stable anchor (for citations or
-   inbound links), append `{#custom-slug}`.
+   the `/NN` prefix. Heading IDs are auto-generated from the heading
+   text by Astro's slugger (e.g. `## /01 Why most teams give up` →
+   `id="01-why-most-teams-give-up"`). **Do NOT use the
+   `{#custom-slug}` syntax** — MDX parses `{...}` as a JSX expression
+   before any remark plugin can rewrite it, so the build fails with
+   `[@mdx-js/rollup] Could not parse expression with acorn`. If you
+   genuinely need a guaranteed-stable anchor (e.g. a heading you plan
+   to rename while preserving inbound links), drop down to inline HTML
+   for that one heading: `<h2 id="why">/01 Why most teams give up</h2>`.
 5. **`<p class="lead">…</p>` for the opening paragraph.** It renders
    larger and in full-strength foreground color.
 6. **Code blocks** use triple-fence with a language. Shiki handles

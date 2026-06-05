@@ -1,142 +1,208 @@
 ---
-title: "How to make the Code Review skill work for you"
-description: "A practical playbook for turning AI code review from noise into something which can free your time"
-pubDate: 2026-05-14
-tag: "Practice"
+title: "How to make code-review skill actually work ?"
+description: "A practical playbook for turning AI code review from noise into something which actually works"
+pubDate: 2026-06-06
+tag: "Workflow"
 ---
 
-import BarChart from "~/components/BarChart.astro";
+import { Image } from "astro:assets";
+import karpathySkill from "~/assets/posts/code-review-skill/karpathy-skill.jpg";
 
 <p class="lead">
-  I've been running AI code review on every PR at Simbian for about
-  nine months. The first three were frustrating. The last six have been
-  genuinely load-bearing. The difference wasn't a better model — it was
-  a small set of rules I wish someone had handed me on day one.
+  The official code-review plugin didn't work for me. Its reasoning looked
+  flawless, its steps looked right — but the review it produced was not on par with my manual reviews.
 </p>
 
-This is that handout. Five things only. No tools list.
+What I want to share with you is *my* way of making a customized code review skill which can mimic your reviews.  
 
-## /01 Why most teams give up
+## /01 A mental model for skills
 
-Out of the box, AI code review behaves like a hyper-confident junior
-who read every style guide and no business context. It flags `any` in
-TypeScript, suggests renaming variables that nobody renames, and asks
-for tests on a function that's been stable for three years. It is, at
-best, <mark>busy work disguised as rigor</mark>. Most teams quietly
-turn it off after a sprint.
+If you are already using skills, you can skip this section, otherwise below gives a quick mental model. 
 
-The fix isn't a better model. It's deciding — explicitly — what you
-want the reviewer to do, and what you want it to leave alone.
+In simple words: A skill is a reusable, polished prompt - which can be invoked by you or Claude Code anytime when required. You store this polished prompt in a markdown file named **`SKILL.md`**. 
 
-## /02 Start with a contract, not a tool
+Here, for example, is the [most-starred skill](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md) on GitHub: a distillation of
+Andrej Karpathy's 🐐 coding guidelines into a single **`SKILL.md`**:
 
-Before you wire up anything, write a one-page **review contract**.
-Ours has three sections: _must flag_, _may comment_, _must not touch_.
-The contract lives in the repo. Every prompt, every config, every
-escalation rule descends from it.
+<figure>
+  <Image src={karpathySkill} alt="GitHub preview of the karpathy-guidelines SKILL.md, the most-starred Claude skill, showing its frontmatter table and opening sections." />
+  <figcaption class="fig-cap">
+    <span>Fig. 01 — The most-starred Claude skill on GitHub</span>
+    <span>github.com</span>
+  </figcaption>
+</figure>
 
-> A reviewer without a contract is just a critic with a runtime.
-> <cite>— internal Simbian wiki</cite>
+Though, you may have noticed that `SKILL.md` looks a little long and somewhat
+non-humanish. Don't worry — you mostly won't write a skill by hand. There's a
+skill for writing a skill, LOL! 
 
-Ours, abbreviated:
+**`/skill-creator`**, enabled in Claude Code by default, helps you create a skill. 
 
-```markdown
-# Code review contract — v3
-
-## Must flag (block merge)
-- secrets, tokens, or unredacted PII in diff
-- missing input validation on user-facing endpoints
-- breaking changes to public types without migration note
-- new dependency > 50KB without justification
-
-## May comment (non-blocking)
-- duplication across files in this PR
-- missing tests on net-new public functions
-- error paths that swallow exceptions silently
-
-## Must NOT touch
-- stylistic preferences (formatting handled by formatter)
-- variable names in unchanged code
-- TODO comments left intentionally
-- generated files
-```
-
-The contract is the leverage point. The model only does what the
-contract permits. The contract is reviewed quarterly by the team — the
-same way you'd review a style guide.
-
-## /03 The base prompt is short
-
-We tried elaborate XML-tagged prompts with role-play and chain-of-thought.
-They scored worse than this:
+Few more important things about a skill: it can also include more than one file in its directory. That keeps
+`SKILL.md` focused on the essentials while letting the model pull in detailed
+reference material only when it's actually needed. 
+From the official docs:
 
 ```text
-You are reviewing a pull request.
-Read the diff, the changed files, and the contract.
-
-For every comment, output exactly:
-  { severity, file, line, why, suggest }
-
-Rules
-1. severity must be one of: block, comment, nit
-2. Cite the contract clause that justifies the comment.
-3. If nothing in the contract justifies it, do not comment.
-4. Max 8 comments. Pick the most important.
+my-skill/
+├── SKILL.md        (required — overview and navigation)
+├── reference.md    (detailed API docs — loaded when needed)
+├── examples.md     (usage examples — loaded when needed)
+└── scripts/
+    └── helper.py   (utility script — executed, not loaded)
 ```
 
-Two design choices matter here. First, **structured output** — a
-comment without a contract clause is dropped before it ever reaches
-the PR. Second, **the cap**. Eight comments, ranked. Force the model
-to make choices. The signal-to-noise ratio on the PR thread is the
-only thing reviewers actually feel.
+So keep SKILL.md thin, and let progressive discloure do it's magic. Model decide which reference to read or script to execute at runtime. 
 
-## /04 The three-pass loop
+> There's more to skills than fits here —
+> the [official guide](https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf)
+> covers the rest.
 
-We don't run one review. We run three small ones, in sequence, each
-with a tighter scope.
+## /02 The official code-review plugin
 
-1. **Pass 1 — Diff only.** Flag obvious contract violations. Cheap model. ~3s.
-2. **Pass 2 — Diff + changed files.** Catch broken assumptions and cross-file regressions. Mid model. ~12s.
-3. **Pass 3 — Surgical.** Only if pass 2 flagged something blocking. Frontier model. Full repo context.
+Now, if skills are clear, let me take you through my journey with code review skills. 
+I realised I spent roughly 30% of my week reviewing code, and it’s been increasing every week since engineers are churning out more and more PRs using AI tools. So reviews were the first
+thing I wanted to automate. Searching around, I found Anthropic's official
+[code-review](https://github.com/anthropics/claude-code/tree/main/plugins/code-review)
+plugin. As the docs describe it, it does following steps:
 
-90% of PRs never reach pass 3. The pass-3 reviews are the ones the team
-genuinely respects, because by the time they fire, the model has
-already filtered for actual risk.
+```
+1. Summarizes the pull request changes.
+2. Launches four parallel agents to review independently:
+   - **Agents #1 & #2** — audit for `CLAUDE.md` compliance.
+   - **Agent #3** — scan for obvious bugs in the changes.
+   - **Agent #4** — analyze git blame/history for context-based issues.
+3. Scores each issue 0–100 for confidence.
+4. Filters out anything below the 80-confidence threshold.
+5. Outputs the review — to the terminal by default, or as a PR comment with
+   the `--comment` flag.
+```
 
-## /05 Does it actually help?
+My first impression: exhaustive coverage, cool subagents idea, filtering will lead to less FPs.  
 
-Here's nine months of data from our internal dashboard, normalized per
-merged PR.
+> Here are the other [skills](https://github.com/anthropics/skills) Anthropic ships
+> out of the box, if you're curious.
 
-<BarChart
-  months={["Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May"]}
-  series={[
-    { label: "Comments per PR (noise)", color: "rule",   values: [100, 93, 78, 62, 49, 40, 33, 29, 24] },
-    { label: "Bugs caught (signal)",    color: "accent", values: [11, 14, 22, 29, 36, 42, 49, 56, 62] }
-  ]}
-  caption="FIG. 01 — Noise vs. signal, Sep 2025 → May 2026"
-  note="n = 1,247 PRs"
-/>
+## /03 But does it actually work?
 
-The crossover in February is when we shipped the contract-clause
-gate. Comments per PR fell **73%**. Bugs caught more than doubled.
-Same model. Different rules of engagement.
+> My happiness was short-lived.
 
-## /06 What to ignore
+I installed it, ran it on few PRs, but it fell short in following ways:
 
-Three habits to actively kill:
+- **It takes ton of tokens.** Four parallel agents hurt my usage limit hard
+- **Even then, the review wasn't close to mine.** It had no clue about the
+  coding conventions we follow, context around our features, `commons`
+  module, or any other tribal knowledge. 
+- **Follow up reviews** didn't need such a heavy workflow, in a few instances, the time it took was more than me reviewing it manually. 
+- **Comments seemed robotic** Not a big one but my review style is tailored around asking the author questions and leting them come to the correct answer with their own research, comments lacked human touch. 
 
-- **Quality scores.** "This PR scores 7.2/10." Meaningless. Delete from the UI.
-- **Auto-applied fixes on style.** Your formatter already does this. Stop relitigating.
-- **Comments without code citations.** If the model can't point at a line, it doesn't get to talk.
+Don't get me wrong — it found security bugs *better* than I would ever have. It just didn't review like someone who knows the codebase.
 
-## /07 Closing thought
+## /04 How I made it work
 
-AI code review is mostly a _policy_ problem dressed up as a _tools_
-problem. The teams that get value treat the reviewer like a junior on
-the team — onboarded, scoped, held accountable. The teams that don't,
-treat it like magic that should know what they want.
+The missing ingredient: <mark>Company Context</mark>.
 
-If you've been burned, try this: throw away your tool config, write
-the contract, ship the three-pass loop, and only then re-enable
-anything fancy. Most of the value is in the first hour.
+The Idea: What if I create my **own code review skill** based on the corpus data of the **past reviews** - done by me and my colleagues? 
+
+So, I took our 50+ most-commented PRs with architectural changes and asked Claude Code to build a review skill from them. So I prompted Claude Code along those lines:
+
+```text
+Using /skill-creator, I want you to write a code review skill named simbian-review, the way senior engineers would do — architecturally aware, and grounded in the project's actual conventions. 
+We will use this skill to review any pull request and publish comments in draft mode on github.  
+In SKILL.md, I want you to write standard practises which is required for all the code reviews. 
+Create a references folder, and in that create reference file for particular apps which can be used for reviewing just those.
+SKILL.md should talk about the navigation for references based on changes in which app folder. 
+Data Corpus: Here are the past pull requests for you to fetch comments from and understand the context:
+app_xxx -> 123, 156, ...
+app_yyy -> 1345, 1456 ...
+...
+...
+
+Don't skip any PRs, ask me any questions if you have any, don't take assumptions. Your output should be comments, prefixed using [claude-code], published in draft mode for me to do final review.
+```
+
+### Results
+
+Now it was time to test it. I ran the skill on few of the PRs, pending for me to review, so I could compare apples to apples. 
+
+After few back-and-forths, and burning the midnight oil, Claude produced a skill for me which had following directory tree:
+
+```text
+simbian-review/
+├── evals/
+│   └── evals.json
+├── references/
+│   ├── <app>.md
+│   ├── abc.md
+│   └── ...
+└── SKILL.md
+```
+
+I was happy with how:
+
+- **It didn't drain my usage limit.** It ran and completed in a few minutes:
+  light on tokens, faster than light.
+- **The comments were deeply contextual** — architectural, and in my own
+  reviewing style: asking the author questions that matters. 
+
+I can't share examples here, that may leak our code details but to prove the credibilty no one in my team have complained about the comments, though frankly speaking it may still create FPs sometime but it's below < 3%. 
+
+## /05 Can it auto evolve though?
+
+For the first few weeks the skill was great, I was reviewing the review comments published by Claud Code.
+Then reality hit. As a startup, we churn out new architecture every week: and the
+skill didn't know about any of the new code.
+
+**It wasn't evolving with me.**
+
+I realized it’s a perfect use case for a Claude Code
+[**routine**](https://claude.com/blog/introducing-routines-in-claude-code) — a
+cron that runs a task on a schedule you set. But I didn't want the routine
+editing the skill directly, so I created a private repo for all my skills.
+
+Now routine's job is to open a *pull request* with changes in my code review skill. I review or edit the
+changes, merge, then pull the updated skill into my local environment for Clade Code to pick it up next time. 
+
+I used `/schedule` in Claude Code to create a weekly routine, described the task in
+free form, and it produced a polished version after a few questions. Here's my
+coroutine task description which can help you to build something of yours:
+
+```text
+You are running a weekly skill-improvement job.
+
+Goal: improve the `simbian-review` skill at `skills/simbian-review/SKILL.md` based on patterns from the 5 most-commented PRs in **<simbian repo>** that were reviewed by @vedang122 OR @<temmate> in the last 7 days.
+
+Steps:
+1. In the **<simbian repo>** clone, use `gh` to query PRs:
+   - Merged to main in the last 7 days
+   - Reviewed by vedang122 OR <temmate> (look at PR reviews, not just comments)
+   - Sort by total comment count (issue comments + review comments)
+   - Take the top 5
+2. For each of those 5 PRs, pull:
+   - The diff (focus on what changed)
+   - All review comments with file:line context
+   - **Skip all the comments with prefix [claude-code] since that is not done by human**
+   - Any back-and-forth discussion threads
+3. Read the current `skills/simbian-review/SKILL.md` and any files under `skills/simbian-review/references/` in the vedang122/skills clone.
+4. Synthesize: what recurring review patterns / heuristics / red flags do vedang122 and <temmate> apply that the current skill does NOT yet capture? Focus on architecture, correctness, DB, async — light on style nits.
+5. Use the `/skill-creator` skill (skill-creator:skill-creator) to update `simbian-review` — add new references in case new components were added, sharpen existing ones, add concrete examples (anonymized if needed, but PR numbers are fine to cite).
+6. In the vedang122/skills clone:
+   - Create a branch: `weekly-skill-update-YYYY-MM-DD`
+   - Commit the changes with a clear message listing which PRs informed each new heuristic
+   - Open a PR titled `Weekly simbian-review update: <date>` with a body summarizing: (a) which 5 PRs were analyzed, (b) what new heuristics were added, (c) what was sharpened, (d) anything intentionally skipped.
+
+If you find no meaningful patterns worth adding this week, DO NOT open a noisy PR. Instead, close out by reporting "no update needed this week" with a one-paragraph explanation of what you reviewed.
+
+Tools allowed: Bash, Read, Write, Edit, Glob, Grep — plus the skill-creator skill.
+```
+
+Every Monday morning I review the routine's PR to my skills repo, edit if
+need be -> merge -> pull it in my local — and I start the week with an updated
+code-review skill. That's how code review skill evolves with me. 
+
+##  /06 Conclusion
+
+We started with the skill concept, explored official published skills and then built one of our own. 
+One thing I have learnt, skills aren't plug-and-play. 
+
+**A skill is only as good as the context you feed it — and the leverage is yours to supply. So be creative!**
