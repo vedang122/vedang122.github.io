@@ -3,6 +3,7 @@ import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import tailwind from "@astrojs/tailwind";
 import sitemap from "@astrojs/sitemap";
+import rehypeSectionNumbers from "./src/plugins/rehype-section-numbers.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,6 +14,7 @@ export default defineConfig({
     sitemap(),
   ],
   markdown: {
+    rehypePlugins: [rehypeSectionNumbers],
     shikiConfig: {
       themes: { light: "github-light", dark: "github-dark" },
       wrap: false,
